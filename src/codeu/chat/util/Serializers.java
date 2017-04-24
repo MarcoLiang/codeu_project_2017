@@ -17,6 +17,7 @@ package codeu.chat.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -39,23 +40,36 @@ public final class Serializers {
 
     @Override
     public void write(OutputStream out, Integer value) throws IOException {
+      ByteBuffer b = ByteBuffer.allocate(4);
+      b.putInt(value);
+      byte[] result = b.array();
+      byte[] encryptedData = Security.encrypt(result);
+      out.write(encryptedData);
 
-      for (int i = 24; i >= 0; i -= 8) {
-        out.write(0xFF & (value >>> i));
-      }
-
+      //      byte[] buffer = new byte[4];
+//      for (int i = 24; i >= 0; i -= 8) {
+//        buffer[i/8] = (byte) (0xFF & (value >>> i));
+//      }
     }
 
     @Override
     public Integer read(InputStream in) throws IOException {
 
-      int value = 0;
+      byte[] buffer = new byte[16];
+      in.read(buffer);
+      byte[] decryptedData = Security.decrypt(buffer);
 
-      for (int i = 0; i < 4; i++) {
-        value = (value << 8) | in.read();
-      }
+      ByteBuffer b = ByteBuffer.wrap(decryptedData);
 
-      return value;
+      return b.getInt();
+
+//      int value = 0;
+//
+//      for (int i = 0; i < 4; i++) {
+//        value = (value << 8) | Security.decrypt(in.read());
+//      }
+//
+//      return value;
 
     }
   };
